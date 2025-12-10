@@ -1,90 +1,129 @@
 # Sistema de Contagem de Objetos em Imagens Industriais
 
-Sistema completo para identificação e contagem de objetos (parafusos, peças, moedas, defeitos) em imagens industriais utilizando técnicas avançadas de processamento de imagem.
+Sistema para identificação e contagem de objetos e defeitos em imagens industriais utilizando processamento de imagem com OpenCV.
 
-## 🎯 Características
+## Características
 
-- **Segmentação Avançada**: Suporta múltiplos métodos (Otsu, Adaptativa, Canny)
-- **Morfologia Matemática**: Operações de abertura e fechamento para limpeza de imagens
-- **Componentes Conectados**: Rotulagem e contagem precisa de objetos
-- **Processamento em Lote**: Processa múltiplas imagens automaticamente
-- **Visualizações Detalhadas**: Gráficos e estatísticas dos objetos detectados
-- **Suporte ao Dataset NEU**: Otimizado para o NEU Metal Surface Defects Dataset
+- Segmentação com múltiplos métodos (Otsu, Adaptativa, Canny)
+- Morfologia matemática para limpeza de imagens
+- Rotulagem de componentes conectados
+- Processamento em lote automatizado
+- Geração de relatórios JSON e estatísticas consolidadas
+- Otimizado para o NEU Metal Surface Defects Dataset
 
-## 📋 Requisitos
+## Requisitos
 
 - Python 3.8+
 - OpenCV 4.8+
 - NumPy 1.24+
 - Matplotlib 3.7+
+- tqdm 4.65+
 
-## 🚀 Instalação
+## Instalação
 
-1. Clone ou baixe este repositório
-
-2. Instale as dependências:
 ```bash
 pip install -r requirements.txt
 ```
 
-## 📖 Uso
+## Processamento Técnico
+
+### Pipeline de Processamento
+
+O sistema implementa um pipeline de processamento de imagem para detecção e contagem de objetos:
+
+**1. Pré-processamento**
+- Conversão para escala de cinza
+- Filtro gaussiano (kernel 5x5) para redução de ruído
+
+**2. Segmentação**
+- **Otsu**: Threshold automático baseado em histograma (padrão)
+- **Adaptativa**: Threshold local para iluminação não uniforme
+- **Canny**: Detecção de bordas com dilatação
+
+**3. Morfologia Matemática**
+- Abertura (erosão + dilatação): remove ruído e separa objetos próximos
+- Fechamento (dilatação + erosão): preenche buracos e conecta partes
+- Kernel configurável (padrão: 3x3) com iterações ajustáveis
+
+**4. Rotulagem de Componentes**
+- Algoritmo `cv2.connectedComponentsWithStats` com conectividade 8
+- Calcula para cada componente: posição, dimensões, área e centroide
+
+**5. Filtragem**
+- Remove objetos abaixo do threshold de área mínima (padrão: 50 pixels)
+
+**6. Geração de Resultados**
+- Marcação visual com retângulos e numeração
+- Estatísticas: total, média, mediana, min, max, desvio padrão
+- Exportação em JSON estruturado
+
+### Processamento do Dataset NEU
+
+O script `processar_dataset_neu.py` automatiza:
+- Varredura de diretórios (train, test, valid)
+- Processamento por tipo de defeito
+- Barras de progresso em tempo real
+- Organização automática de resultados
+- Consolidação de estatísticas
+
+**Tipos de defeitos**: Crazing, Inclusion, Patches, Pitted, Rolled, Scratches
+
+## Uso
 
 ### Processamento de Imagem Única
 
 ```bash
-# Processamento básico
 python main.py -i caminho/para/imagem.jpg
-
-# Com método de segmentação específico
-python main.py -i imagem.jpg -m adaptive
-
-# Ajustando parâmetros
-python main.py -i imagem.jpg -a 100 -k 5 --iteracoes 3
-
-# Salvar resultados
+python main.py -i imagem.jpg -m adaptive -a 100
 python main.py -i imagem.jpg --salvar -o resultados/
 ```
 
 ### Processamento em Lote
 
 ```bash
-# Processar diretório completo
-python main.py -d dataset/ -o resultados/
-
-# Com salvamento automático
 python main.py -d dataset/ -o resultados/ --salvar
 ```
 
-### Parâmetros Disponíveis
+### Processamento Completo do Dataset NEU
 
-- `-i, --imagem`: Caminho para uma única imagem
-- `-d, --diretorio`: Caminho para diretório com múltiplas imagens
+```bash
+# Processamento padrão
+python processar_dataset_neu.py
+
+# Processamento rápido (recomendado)
+python processar_dataset_neu.py --sem-visualizacoes
+
+# Com opções personalizadas
+python processar_dataset_neu.py --sem-visualizacoes -m adaptive -a 75 -o resultados_customizados
+```
+
+O comando `--sem-visualizacoes` processa mais rapidamente, gerando:
+- Imagens com defeitos marcados
+- Arquivos JSON com dados completos
+- Estatísticas consolidadas
+- Barras de progresso em tempo real
+
+### Parâmetros
+
+- `-i, --imagem`: Caminho para imagem única
+- `-d, --diretorio`: Diretório com múltiplas imagens
 - `-o, --saida`: Diretório de saída (padrão: `resultados`)
-- `-m, --metodo`: Método de segmentação (`otsu`, `adaptive`, `canny`)
+- `-m, --metodo`: Segmentação (`otsu`, `adaptive`, `canny`)
 - `-a, --area-minima`: Área mínima em pixels (padrão: 50)
 - `-k, --kernel-morph`: Tamanho do kernel morfológico (padrão: 3)
-- `--iteracoes`: Número de iterações morfológicas (padrão: 2)
-- `--sem-visualizacao`: Não exibir visualizações
-- `--salvar`: Salvar visualizações e resultados
+- `--iteracoes`: Iterações morfológicas (padrão: 2)
+- `--sem-visualizacoes`: Não salvar visualizações
+- `--sem-imagens-resultado`: Não salvar imagens marcadas
 
-## 🔬 Métodos de Segmentação
+## Métodos de Segmentação
 
-### Otsu (Padrão)
-- Melhor para imagens com bom contraste
-- Threshold automático baseado em histograma
-- Recomendado para a maioria dos casos
+**Otsu**: Threshold automático baseado em histograma. Recomendado para a maioria dos casos.
 
-### Adaptativa
-- Útil para imagens com iluminação variável
-- Threshold adaptativo local
-- Melhor para condições de iluminação não uniformes
+**Adaptativa**: Threshold local adaptativo. Útil para iluminação não uniforme.
 
-### Canny
-- Baseado em detecção de bordas
-- Útil para objetos bem definidos
-- Pode requerer ajustes de parâmetros
+**Canny**: Detecção de bordas. Adequado para objetos com bordas bem definidas.
 
-## 📊 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 contagem-industrial/
@@ -93,44 +132,13 @@ contagem-industrial/
 ├── visualizador.py              # Visualização de resultados
 ├── processador_lote.py          # Processamento em lote
 ├── processar_dataset_neu.py     # Processamento completo do dataset NEU
-├── exemplo_uso.py               # Exemplos de uso programático
 ├── requirements.txt             # Dependências
 └── README.md                    # Documentação
 ```
 
-## 🎓 Dataset NEU Metal Surface
+## Saídas do Sistema
 
-Este projeto foi otimizado para trabalhar com o [NEU Metal Surface Defects Dataset](https://www.kaggle.com/datasets/fantacher/neu-metal-surface-defects-data).
-
-### Processamento Completo do Dataset NEU
-
-Para processar **todo o dataset NEU** (train, test e valid) com um único comando:
-
-```bash
-# Processamento completo com configurações padrão
-python processar_dataset_neu.py
-
-# Especificar diretório de saída
-python processar_dataset_neu.py -o resultados_customizados
-
-# Usar método de segmentação adaptativa
-python processar_dataset_neu.py -m adaptive
-
-# Ajustar área mínima
-python processar_dataset_neu.py -a 100
-
-# Processamento mais rápido (sem visualizações)
-python processar_dataset_neu.py --sem-visualizacoes
-```
-
-O script `processar_dataset_neu.py` processa automaticamente:
-- ✅ Todos os diretórios: `train/`, `test/`, `valid/`
-- ✅ Todos os tipos de defeitos: Crazing, Inclusion, Patches, Pitted, Rolled, Scratches
-- ✅ Organiza resultados por tipo de defeito
-- ✅ Gera relatórios JSON completos
-- ✅ Cria estatísticas consolidadas
-
-**Estrutura de saída:**
+**Estrutura de saída do dataset NEU:**
 ```
 resultados_neu/
 ├── imagens_resultado/
@@ -141,34 +149,11 @@ resultados_neu/
 │   ├── Rolled/
 │   └── Scratches/
 ├── visualizacoes/
-│   └── [mesma estrutura]
 ├── resultados_completo.json
 └── resumo_estatistico.json
 ```
 
-### Processamento Manual de Diretórios
-
-Para processar diretórios individuais ou imagens específicas:
-
-```bash
-# Processar apenas um diretório
-python main.py -d "NEU Metal Surface Defects Data/train" -o resultados_train/
-
-# Processar uma imagem específica
-python main.py -i "NEU Metal Surface Defects Data/test/Crazing/Cr_1.bmp"
-```
-
-## 📈 Saídas do Sistema
-
-O sistema gera:
-
-1. **Imagens Resultado**: Imagens originais com objetos detectados marcados
-2. **Visualizações**: Comparação lado a lado (original, segmentação, resultado)
-3. **Estatísticas**: Histogramas e gráficos de distribuição de áreas
-4. **JSON de Resultados**: Dados estruturados com informações de cada objeto
-
-### Exemplo de Saída JSON:
-
+**Formato JSON:**
 ```json
 {
   "arquivo": "imagem.jpg",
@@ -195,70 +180,60 @@ O sistema gera:
 }
 ```
 
-## 🔧 Ajuste de Parâmetros
+## Ajuste de Parâmetros
 
-### Área Mínima (`-a`)
-- **Valores baixos** (20-50): Detecta objetos pequenos, mas pode incluir ruído
-- **Valores médios** (50-100): Balanceado para a maioria dos casos
-- **Valores altos** (100+): Apenas objetos grandes, reduz falsos positivos
+**Área Mínima (`-a`)**
+- 20-50: Detecta objetos pequenos (pode incluir ruído)
+- 50-100: Balanceado (recomendado)
+- 100+: Apenas objetos grandes (reduz falsos positivos)
 
-### Kernel Morfológico (`-k`)
-- **3x3**: Para objetos pequenos e detalhes finos
-- **5x5**: Balanceado, remove ruído médio
-- **7x7+**: Para objetos grandes, remove ruído grosso
+**Kernel Morfológico (`-k`)**
+- 3x3: Objetos pequenos e detalhes finos
+- 5x5: Balanceado
+- 7x7+: Objetos grandes
 
-### Iterações (`--iteracoes`)
-- **1-2**: Limpeza leve
-- **3-5**: Limpeza moderada
-- **5+**: Limpeza agressiva (pode remover objetos pequenos)
+**Iterações (`--iteracoes`)**
+- 1-2: Limpeza leve
+- 3-5: Limpeza moderada
+- 5+: Limpeza agressiva
 
-## 💡 Exemplos de Uso Programático
+## Uso Programático
 
 ```python
 from contador_objetos import ContadorObjetosIndustrial, MetodoSegmentacao
 from visualizador import VisualizadorResultados
 
-# Criar contador
 contador = ContadorObjetosIndustrial(
     area_minima=50,
     metodo_segmentacao=MetodoSegmentacao.OTSU
 )
 
-# Processar imagem
 resultado = contador.processar("imagem.jpg")
-
-# Visualizar
 VisualizadorResultados.visualizar(resultado)
 ```
 
-## 🐛 Solução de Problemas
+## Solução de Problemas
 
-### Nenhum objeto detectado
+**Nenhum objeto detectado**
 - Reduza a área mínima (`-a`)
 - Tente método de segmentação diferente (`-m`)
-- Verifique se a imagem tem contraste adequado
+- Verifique contraste da imagem
 
-### Muitos falsos positivos
+**Muitos falsos positivos**
 - Aumente a área mínima (`-a`)
 - Aumente o kernel morfológico (`-k`)
 - Aumente as iterações (`--iteracoes`)
 
-### Objetos não separados
+**Objetos não separados**
 - Ajuste o kernel morfológico
-- Tente método Canny para objetos bem definidos
-- Verifique se há sobreposição real dos objetos
+- Use método Canny para objetos bem definidos
 
-## 📝 Licença
-
-Este projeto é fornecido como está, para fins educacionais e de pesquisa.
-
-## 🤝 Contribuições
-
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou pull requests.
-
-## 📚 Referências
+## Referências
 
 - [OpenCV Documentation](https://docs.opencv.org/)
 - [NEU Metal Surface Defects Dataset](https://www.kaggle.com/datasets/fantacher/neu-metal-surface-defects-data)
 - [Computer Vision: Algorithms and Applications](https://szeliski.org/Book/)
 
+## Licença
+
+Este projeto é fornecido como está, para fins educacionais e de pesquisa.
