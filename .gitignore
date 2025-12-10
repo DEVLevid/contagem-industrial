@@ -1,4 +1,3 @@
-# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -20,38 +19,29 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
 venv/
 env/
 ENV/
 .venv
 
-# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# Resultados e imagens processadas
 resultados/
 resultados_*/
-dataset_teste/
 *.jpg
 *.jpeg
 *.png
 *.bmp
 *.tiff
 *.tif
-!teste_simulado.jpg
 
-# Jupyter Notebook
 .ipynb_checkpoints
 
-# OS
 .DS_Store
 Thumbs.db
 
-# Logs
 *.log
-

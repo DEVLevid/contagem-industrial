@@ -1,12 +1,8 @@
-"""
-Módulo para visualização dos resultados da contagem de objetos.
-"""
-
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 from typing import Optional
-from contador_objetos import ResultadoContagem
+from .contador import ResultadoContagem
 
 
 class VisualizadorResultados:
@@ -36,7 +32,6 @@ class VisualizadorResultados:
         
         if salvar and caminho_saida:
             plt.savefig(caminho_saida, dpi=300, bbox_inches='tight')
-            # Não imprimir durante processamento em lote (mostrar=False)
             if mostrar:
                 print(f"Visualização salva em: {caminho_saida}")
         
@@ -48,14 +43,12 @@ class VisualizadorResultados:
     @staticmethod
     def visualizar_estatisticas(resultado: ResultadoContagem, salvar: bool = False,
                                 caminho_saida: Optional[str] = None, mostrar: bool = True):
-
         if resultado.total_objetos == 0:
             print("Nenhum objeto detectado para visualizar estatísticas.")
             return
         
         fig, axes = plt.subplots(1, 2, figsize=(14, 6))
         
-        # Histograma de áreas
         areas = [obj['area'] for obj in resultado.objetos_detectados]
         axes[0].hist(areas, bins=min(20, len(areas)), edgecolor='black', alpha=0.7)
         axes[0].axvline(resultado.estatisticas['area_media'], color='r', 

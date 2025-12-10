@@ -1,43 +1,15 @@
-"""
-Script para processar todo o dataset NEU Metal Surface Defects Data.
-Processa todas as imagens dos diretórios train, test e valid com um único comando.
-"""
-
-import os
 import json
 from pathlib import Path
 from datetime import datetime
 from collections import defaultdict
 import cv2
-import numpy as np
 from tqdm import tqdm
-from contador_objetos import ContadorObjetosIndustrial, MetodoSegmentacao
-from visualizador import VisualizadorResultados
-
-
-def converter_para_json_serializavel(obj):
-    """
-    Converte valores NumPy (int64, float64, etc.) para tipos nativos do Python
-    que são serializáveis pelo JSON.
-    """
-    if isinstance(obj, np.integer):
-        return int(obj)
-    elif isinstance(obj, np.floating):
-        return float(obj)
-    elif isinstance(obj, np.ndarray):
-        return obj.tolist()
-    elif isinstance(obj, dict):
-        return {key: converter_para_json_serializavel(value) for key, value in obj.items()}
-    elif isinstance(obj, list):
-        return [converter_para_json_serializavel(item) for item in obj]
-    elif isinstance(obj, tuple):
-        return tuple(converter_para_json_serializavel(item) for item in obj)
-    else:
-        return obj
+from src.core.contador import ContadorObjetosIndustrial, MetodoSegmentacao
+from src.core.visualizador import VisualizadorResultados
+from src.utils.json_utils import converter_para_json_serializavel
 
 
 class ProcessadorDatasetNEU:
-    
     def __init__(
         self,
         caminho_dataset: str = "NEU Metal Surface Defects Data",
@@ -58,7 +30,6 @@ class ProcessadorDatasetNEU:
         )
         
         self.tipos_defeitos = ['Crazing', 'Inclusion', 'Patches', 'Pitted', 'Rolled', 'Scratches']
-        
         self.diretorios_dataset = ['train', 'test', 'valid']
         
         self.estatisticas_globais = {
@@ -71,7 +42,6 @@ class ProcessadorDatasetNEU:
     
     def criar_estrutura_saida(self):
         self.diretorio_saida.mkdir(parents=True, exist_ok=True)
-        
         (self.diretorio_saida / 'imagens_resultado').mkdir(exist_ok=True)
         (self.diretorio_saida / 'visualizacoes').mkdir(exist_ok=True)
         
@@ -79,8 +49,7 @@ class ProcessadorDatasetNEU:
             (self.diretorio_saida / 'imagens_resultado' / tipo).mkdir(exist_ok=True)
             (self.diretorio_saida / 'visualizacoes' / tipo).mkdir(exist_ok=True)
     
-    def processar_imagem(self, caminho_imagem: Path, tipo_defeito: str, 
-                        diretorio: str) -> dict:
+    def processar_imagem(self, caminho_imagem: Path, tipo_defeito: str, diretorio: str) -> dict:
         resultado = self.contador.processar(str(caminho_imagem))
         
         if not resultado:
@@ -135,7 +104,6 @@ class ProcessadorDatasetNEU:
         resultados = []
         total_objetos_detectados = 0
         
-        # Barra de progresso para este tipo de defeito
         descricao = f"{tipo_defeito:12s}"
         with tqdm(total=len(imagens), desc=descricao, unit="img", 
                   bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {postfix}]',
@@ -193,13 +161,9 @@ class ProcessadorDatasetNEU:
         )
         
         self.salvar_resultados()
-        
         self.exibir_resumo()
     
     def salvar_resultados(self):
-        caminho_json_completo = self.diretorio_saida / 'resultados_completo.json'
-        
-        # Preparar dados e converter tipos NumPy para tipos nativos
         dados_completos = {
             'metadata': {
                 'data_processamento': datetime.now().isoformat(),
@@ -215,17 +179,14 @@ class ProcessadorDatasetNEU:
             'resultados_detalhados': self.estatisticas_globais['resultados_detalhados']
         }
         
-        # Converter todos os valores NumPy para tipos nativos
         dados_completos = converter_para_json_serializavel(dados_completos)
         
+        caminho_json_completo = self.diretorio_saida / 'resultados_completo.json'
         with open(caminho_json_completo, 'w', encoding='utf-8') as f:
             json.dump(dados_completos, f, indent=2, ensure_ascii=False)
         
         print(f"\n✓ Resultados completos salvos em: {caminho_json_completo}")
         
-        caminho_resumo = self.diretorio_saida / 'resumo_estatistico.json'
-        
-        # Preparar dados e converter tipos NumPy para tipos nativos
         dados_resumo = {
             'metadata': {
                 'data_processamento': datetime.now().isoformat(),
@@ -245,9 +206,9 @@ class ProcessadorDatasetNEU:
             }
         }
         
-        # Converter todos os valores NumPy para tipos nativos
         dados_resumo = converter_para_json_serializavel(dados_resumo)
         
+        caminho_resumo = self.diretorio_saida / 'resumo_estatistico.json'
         with open(caminho_resumo, 'w', encoding='utf-8') as f:
             json.dump(dados_resumo, f, indent=2, ensure_ascii=False)
         
@@ -284,101 +245,3 @@ class ProcessadorDatasetNEU:
         print(f"\n📂 RESULTADOS SALVOS EM: {self.diretorio_saida}")
         print("=" * 80)
 
-
-def main():
-    import argparse
-    
-    parser = argparse.ArgumentParser(
-        description='Processar dataset NEU Metal Surface Defects Data completo',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Exemplos:
-  # Processar com configurações padrão
-  python processar_dataset_neu.py
-  
-  # Especificar diretório de saída
-  python processar_dataset_neu.py -o resultados_customizados
-  
-  # Usar método de segmentação adaptativa
-  python processar_dataset_neu.py -m adaptive
-  
-  # Ajustar área mínima
-  python processar_dataset_neu.py -a 100
-  
-  # Não salvar visualizações (mais rápido)
-  python processar_dataset_neu.py --sem-visualizacoes
-        """
-    )
-    
-    parser.add_argument(
-        '-d', '--dataset',
-        type=str,
-        default='NEU Metal Surface Defects Data',
-        help='Caminho para o diretório do dataset (padrão: "NEU Metal Surface Defects Data")'
-    )
-    
-    parser.add_argument(
-        '-o', '--saida',
-        type=str,
-        default='resultados_neu',
-        help='Diretório de saída (padrão: resultados_neu)'
-    )
-    
-    parser.add_argument(
-        '-m', '--metodo',
-        type=str,
-        choices=['otsu', 'adaptive', 'canny'],
-        default='otsu',
-        help='Método de segmentação (padrão: otsu)'
-    )
-    
-    parser.add_argument(
-        '-a', '--area-minima',
-        type=int,
-        default=50,
-        help='Área mínima em pixels (padrão: 50)'
-    )
-    
-    parser.add_argument(
-        '--sem-visualizacoes',
-        action='store_true',
-        help='Não salvar visualizações (processamento mais rápido)'
-    )
-    
-    parser.add_argument(
-        '--sem-imagens-resultado',
-        action='store_true',
-        help='Não salvar imagens com objetos marcados'
-    )
-    
-    args = parser.parse_args()
-    
-    metodo_map = {
-        'otsu': MetodoSegmentacao.OTSU,
-        'adaptive': MetodoSegmentacao.ADAPTIVE,
-        'canny': MetodoSegmentacao.CANNY
-    }
-    metodo = metodo_map[args.metodo]
-    
-    caminho_dataset = Path(args.dataset)
-    if not caminho_dataset.exists():
-        print(f"❌ Erro: Dataset não encontrado em: {caminho_dataset}")
-        print(f"   Verifique o caminho e tente novamente.")
-        return
-    
-    processador = ProcessadorDatasetNEU(
-        caminho_dataset=str(caminho_dataset),
-        diretorio_saida=args.saida,
-        area_minima=args.area_minima,
-        metodo_segmentacao=metodo,
-        salvar_visualizacoes=not args.sem_visualizacoes,
-        salvar_imagens_resultado=not args.sem_imagens_resultado
-    )
-    
-    processador.processar_dataset_completo()
-    
-    print("\n✅ Processamento concluído com sucesso!")
-
-
-if __name__ == '__main__':
-    main()

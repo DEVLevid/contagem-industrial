@@ -1,8 +1,3 @@
-"""
-Módulo principal para contagem de objetos em imagens industriais.
-Suporta segmentação, morfologia e rotulagem de componentes conectados.
-"""
-
 import cv2
 import numpy as np
 from typing import Tuple, List, Dict, Optional
@@ -26,7 +21,7 @@ class ResultadoContagem:
     estatisticas: Dict
 
 
-class ContadorObjetosIndustrial:    
+class ContadorObjetosIndustrial:
     def __init__(
         self,
         area_minima: int = 50,
@@ -35,7 +30,6 @@ class ContadorObjetosIndustrial:
         morph_iterations: int = 2,
         metodo_segmentacao: MetodoSegmentacao = MetodoSegmentacao.OTSU
     ):
-
         self.area_minima = area_minima
         self.blur_kernel = blur_kernel
         self.morph_kernel = np.ones((morph_kernel_size, morph_kernel_size), np.uint8)
@@ -56,13 +50,11 @@ class ContadorObjetosIndustrial:
             _, img_binaria = cv2.threshold(
                 imagem, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
             )
-        
         elif self.metodo_segmentacao == MetodoSegmentacao.ADAPTIVE:
             img_binaria = cv2.adaptiveThreshold(
                 imagem, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                 cv2.THRESH_BINARY_INV, 11, 2
             )
-        
         elif self.metodo_segmentacao == MetodoSegmentacao.CANNY:
             edges = cv2.Canny(imagem, 50, 150)
             img_binaria = cv2.dilate(edges, self.morph_kernel, iterations=1)
@@ -70,7 +62,6 @@ class ContadorObjetosIndustrial:
         return img_binaria
     
     def aplicar_morfologia(self, imagem_binaria: np.ndarray) -> np.ndarray:
-
         img_morph = cv2.morphologyEx(
             imagem_binaria, cv2.MORPH_OPEN, 
             self.morph_kernel, iterations=self.morph_iterations
@@ -84,25 +75,20 @@ class ContadorObjetosIndustrial:
         return img_morph
     
     def contar_componentes(self, imagem_binaria: np.ndarray) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray]:
-
         num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
             imagem_binaria, connectivity=8
         )
         return num_labels, labels, stats, centroids
     
     def processar(self, caminho_imagem: str) -> Optional[ResultadoContagem]:
-
         img_original = cv2.imread(caminho_imagem)
         if img_original is None:
             print(f"Erro: Imagem não encontrada em {caminho_imagem}")
             return None
         
         img_preprocessada = self.preprocessar_imagem(img_original)
-        
         img_binaria = self.segmentar_imagem(img_preprocessada)
-        
         img_morph = self.aplicar_morfologia(img_binaria)
-        
         num_labels, labels, stats, centroids = self.contar_componentes(img_morph)
         
         img_resultado = img_original.copy()

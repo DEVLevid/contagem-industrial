@@ -1,16 +1,12 @@
-"""
-Módulo para processamento em lote de múltiplas imagens.
-"""
-
 import json
 from pathlib import Path
 from typing import List, Dict, Optional
 import cv2
-from contador_objetos import ContadorObjetosIndustrial
-from visualizador import VisualizadorResultados
+from src.core.contador import ContadorObjetosIndustrial
+from src.core.visualizador import VisualizadorResultados
+
 
 class ProcessadorLote:
-    
     def __init__(self, contador: ContadorObjetosIndustrial):
         self.contador = contador
         self.resultados: List[Dict] = []
@@ -23,7 +19,6 @@ class ProcessadorLote:
         salvar_visualizacoes: bool = True,
         salvar_resultados: bool = True
     ) -> List[Dict]:
-
         if extensoes is None:
             extensoes = ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif']
         
