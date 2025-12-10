@@ -88,32 +88,74 @@ python main.py -d dataset/ -o resultados/ --salvar
 
 ```
 contagem-industrial/
-├── main.py                 # Script principal (CLI)
-├── contador_objetos.py     # Classe principal de contagem
-├── visualizador.py         # Visualização de resultados
-├── processador_lote.py     # Processamento em lote
-├── requirements.txt        # Dependências
-└── README.md              # Documentação
+├── main.py                      # Script principal (CLI)
+├── contador_objetos.py          # Classe principal de contagem
+├── visualizador.py              # Visualização de resultados
+├── processador_lote.py          # Processamento em lote
+├── processar_dataset_neu.py     # Processamento completo do dataset NEU
+├── exemplo_uso.py               # Exemplos de uso programático
+├── requirements.txt             # Dependências
+└── README.md                    # Documentação
 ```
 
 ## 🎓 Dataset NEU Metal Surface
 
 Este projeto foi otimizado para trabalhar com o [NEU Metal Surface Defects Dataset](https://www.kaggle.com/datasets/fantacher/neu-metal-surface-defects-data).
 
-### Como usar com o dataset NEU:
+### Processamento Completo do Dataset NEU
 
-1. Baixe o dataset do Kaggle
-2. Organize as imagens em um diretório:
-```
-dataset/
-├── imagem1.jpg
-├── imagem2.jpg
-└── ...
-```
+Para processar **todo o dataset NEU** (train, test e valid) com um único comando:
 
-3. Execute o processamento em lote:
 ```bash
-python main.py -d dataset/ -o resultados_neu/ --salvar
+# Processamento completo com configurações padrão
+python processar_dataset_neu.py
+
+# Especificar diretório de saída
+python processar_dataset_neu.py -o resultados_customizados
+
+# Usar método de segmentação adaptativa
+python processar_dataset_neu.py -m adaptive
+
+# Ajustar área mínima
+python processar_dataset_neu.py -a 100
+
+# Processamento mais rápido (sem visualizações)
+python processar_dataset_neu.py --sem-visualizacoes
+```
+
+O script `processar_dataset_neu.py` processa automaticamente:
+- ✅ Todos os diretórios: `train/`, `test/`, `valid/`
+- ✅ Todos os tipos de defeitos: Crazing, Inclusion, Patches, Pitted, Rolled, Scratches
+- ✅ Organiza resultados por tipo de defeito
+- ✅ Gera relatórios JSON completos
+- ✅ Cria estatísticas consolidadas
+
+**Estrutura de saída:**
+```
+resultados_neu/
+├── imagens_resultado/
+│   ├── Crazing/
+│   ├── Inclusion/
+│   ├── Patches/
+│   ├── Pitted/
+│   ├── Rolled/
+│   └── Scratches/
+├── visualizacoes/
+│   └── [mesma estrutura]
+├── resultados_completo.json
+└── resumo_estatistico.json
+```
+
+### Processamento Manual de Diretórios
+
+Para processar diretórios individuais ou imagens específicas:
+
+```bash
+# Processar apenas um diretório
+python main.py -d "NEU Metal Surface Defects Data/train" -o resultados_train/
+
+# Processar uma imagem específica
+python main.py -i "NEU Metal Surface Defects Data/test/Crazing/Cr_1.bmp"
 ```
 
 ## 📈 Saídas do Sistema
